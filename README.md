@@ -1,4 +1,6 @@
 # Tea Tree
+[![Latest Version](https://img.shields.io/badge/crates.io-v0.0.0-green.svg)](https://crates.io/crates/failure)
+
 *the place for all tea to mix.*
 
 **Distributed and Blockchain Infrastructure use Actor Model and Rust.**
