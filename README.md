@@ -1,5 +1,5 @@
 # Tea Tree
-[![Latest Version](https://img.shields.io/badge/crates.io-v0.0.1-green.svg)](https://crates.io/crates/teatree)
+[![Latest Version](https://img.shields.io/badge/crates.io-v0.0.2-green.svg)](https://crates.io/crates/teatree)
 
 *the place for all tea to mix.*
 
