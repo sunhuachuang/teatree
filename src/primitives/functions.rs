@@ -1,10 +1,8 @@
-extern crate actix;
-
-use actix::dev::ToEnvelope;
-use actix::prelude::{Actor, Addr, Handler, Message};
 use bytes::BytesMut;
 use serde_json::Value;
 use std::path::PathBuf;
+
+use crate::actor::prelude::*;
 
 use super::consts::DEFAULT_STORAGE_DIR_NAME;
 
