@@ -14,12 +14,46 @@ toml = "0.5"
 serde = "1"
 serde_derive = "1"
 
-crypto = { version = "0.0.1", path = "crypto" }
-primitives = { version = "0.0.1", path = "primitives" }
-traits = { version = "0.0.1", path = "traits" }
-p2p = { version = "0.0.1", path = "p2p" }
-rpc = { version = "0.0.1", path = "rpc" }
-actor = { version = "0.0.1", path = "actor" }
+actix = "0.8"
+actix_derive = "0.4"
+tokio = "0.1"
+futures = "0.1"
 
-[workspace]
-members = ["crypto", "primitives", "traits", "p2p", "rpc", "actor"]
+rand = "^0.5"
+sha3 = "^0.7"
+serde = "1.0"
+serde_derive = "1.0"
+ed25519-dalek = { version="1.0.0-pre.0", features = ["serde"]}
+
+serde = "1"
+serde_derive = "1"
+bincode = "1"
+byteorder = "1"
+bytes = "0.4"
+tokio = "0.1"
+futures = "0.1"
+
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+bincode = "1.0"
+actix = "0.8"
+bytes = "0.4"
+dirs = "1.0"
+jsonrpc-parse = "0.1"
+
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+tokio = "0.1"
+futures = "0.1"
+jsonrpc-parse = "0.1"
+rand = "0.6"
+
+serde = "1.0"
+serde_derive = "1.0"
+bincode = "1.0"
+failure = "0.1"
+rand = "0.5"
+jsonrpc-parse = "0.1.1"
+
