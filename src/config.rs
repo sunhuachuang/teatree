@@ -5,8 +5,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::net::{IpAddr, SocketAddr};
 
-use primitives::consts::{P2P_DEFAULT_SOCKET, RPC_DEFAULT_SOCKET};
-use primitives::types::{GroupID, PeerAddr as NodeAddr};
+use crate::primitives::consts::{P2P_DEFAULT_SOCKET, RPC_DEFAULT_SOCKET};
+use crate::primitives::types::{GroupID, PeerAddr as NodeAddr};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Socket {

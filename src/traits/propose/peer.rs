@@ -7,8 +7,8 @@ use std::hash::Hash;
 use std::marker::Send;
 use std::marker::Sync;
 
-use primitives::types::Binary;
-use primitives::types::{GroupID, PeerAddr};
+use crate::primitives::types::Binary;
+use crate::primitives::types::{GroupID, PeerAddr};
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct PeerID<P: Peer> {

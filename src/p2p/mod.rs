@@ -1,9 +1,10 @@
-use actor::prelude::*;
-use crypto::keypair::PrivateKey;
 use futures::Stream;
 use std::net::SocketAddr;
 use tokio::net::{UdpFramed, UdpSocket};
-use traits::actor::P2PBridgeActor;
+
+use crate::actor::prelude::*;
+use crate::crypto::keypair::PrivateKey;
+use crate::traits::actor::P2PBridgeActor;
 
 mod codec;
 mod content;

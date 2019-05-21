@@ -1,8 +1,9 @@
-use actor::prelude::{Addr, Message};
-use primitives::types::{EventByte, GroupID, PeerAddr, PeerInfoByte};
 use std::net::SocketAddr;
 
-use crate::actor::P2PBridgeActor;
+use crate::actor::prelude::{Addr, Message};
+use crate::primitives::types::{EventByte, GroupID, PeerAddr, PeerInfoByte};
+
+use crate::traits::actor::P2PBridgeActor;
 
 /// receive event message between p2p & bridge.
 /// Params peerAddr, Event Byte.

@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use serde_json::json;
 
-use primitives::types::{EventID, GroupID, RPCParams};
+use crate::primitives::types::{EventID, GroupID, RPCParams};
 
 /// Response in levels and local outside call.
 /// Local RPC Format:

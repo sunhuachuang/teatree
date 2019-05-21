@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use serde_json::json;
 
-use primitives::types::{BlockByte, GroupID, LevelPermissionByte, RPCParams};
+use crate::primitives::types::{BlockByte, GroupID, LevelPermissionByte, RPCParams};
 
 /// Request in levels and local outside call.
 /// Local RPC Format:

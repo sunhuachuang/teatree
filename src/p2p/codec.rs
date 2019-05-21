@@ -3,10 +3,10 @@ use bytes::{BufMut, BytesMut};
 use serde_derive::{Deserialize, Serialize};
 use tokio::codec::{Decoder, Encoder};
 
-use crypto::keypair::{PublicKey, Signature, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
-use primitives::types::GroupID;
+use crate::crypto::keypair::{PublicKey, Signature, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
+use crate::primitives::types::GroupID;
 
-use crate::content::P2PContent;
+use super::content::P2PContent;
 
 const HEAD_LENGTH: usize = 4 + 2 + 32 + PUBLIC_KEY_LENGTH + PUBLIC_KEY_LENGTH + SIGNATURE_LENGTH;
 const BEFORE_TO_LENGTH: usize = 4 + 2 + 32 + PUBLIC_KEY_LENGTH;

@@ -1,7 +1,8 @@
-use actor::prelude::*;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
-use traits::actor::RPCBridgeActor;
+
+use crate::actor::prelude::*;
+use crate::traits::actor::RPCBridgeActor;
 
 mod listen;
 mod request;

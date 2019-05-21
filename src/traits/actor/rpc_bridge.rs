@@ -1,6 +1,5 @@
-use actor::prelude::*;
-
-use crate::message::rpc_message::*;
+use crate::actor::prelude::*;
+use crate::traits::message::rpc_message::*;
 
 pub trait RPCBridgeActor<R = Context<Self>>
 where

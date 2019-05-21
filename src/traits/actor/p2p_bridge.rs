@@ -1,6 +1,5 @@
-use actor::prelude::*;
-
-use crate::message::p2p_message::*;
+use crate::actor::prelude::*;
+use crate::traits::message::p2p_message::*;
 
 pub trait P2PBridgeActor<R = Context<Self>>
 where

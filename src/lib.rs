@@ -3,16 +3,18 @@ use std::net::SocketAddr;
 mod config;
 mod network_bridge;
 
+pub mod actor;
+pub mod crypto;
+pub mod p2p;
+pub mod primitives;
+pub mod rpc;
+pub mod traits;
+
 use actor::prelude::{Actor, Addr, System, SystemRunner};
 use crypto::keypair::PrivateKey;
 use p2p::p2p_start;
 use rpc::rpc_start;
 use traits::actor::BridgeActor;
-
-pub use actor;
-pub use crypto;
-pub use primitives;
-pub use traits;
 
 pub use config::Configure;
 pub use network_bridge::NetworkBridgeActor;

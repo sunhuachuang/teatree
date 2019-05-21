@@ -3,8 +3,8 @@ use std::iter::Iterator;
 use std::net::SocketAddr;
 
 //use primitives::consts::K_BUCKET;
-use crypto::keypair::PublicKey;
-use primitives::consts::P2P_DEFAULT_SOCKET;
+use crate::crypto::keypair::PublicKey;
+use crate::primitives::consts::P2P_DEFAULT_SOCKET;
 
 use super::distance::Distance;
 

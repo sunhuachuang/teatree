@@ -3,13 +3,13 @@ use futures::{Future, Sink};
 use std::net::SocketAddr;
 use tokio::net::UdpFramed;
 
-use actor::prelude::*;
-use primitives::functions::{try_resend_times, DEFAULT_TIMES};
-use traits::actor::P2PBridgeActor;
+use crate::actor::prelude::*;
+use crate::primitives::functions::{try_resend_times, DEFAULT_TIMES};
+use crate::traits::actor::P2PBridgeActor;
 
-use crate::codec::{P2PBody, P2PCodec, P2PHead};
-use crate::content::P2PContent;
-use crate::p2p::P2PActor;
+use super::codec::{P2PBody, P2PCodec, P2PHead};
+use super::content::P2PContent;
+use super::p2p::P2PActor;
 
 /// message between session and p2p actor.
 #[derive(Clone)]

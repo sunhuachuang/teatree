@@ -1,16 +1,16 @@
-use actor::prelude::*;
+use jsonrpc_parse::httpcodec::HTTPCodec;
 use rand::{self, Rng};
 use std::net::SocketAddr;
 use tokio::codec::FramedRead;
 use tokio::io::AsyncRead;
 use tokio::net::TcpStream;
 
-use jsonrpc_parse::httpcodec::HTTPCodec;
-use primitives::consts::{HIGH_WATERMARK, LOW_WATERMARK};
-use traits::actor::RPCBridgeActor;
+use crate::actor::prelude::*;
+use crate::primitives::consts::{HIGH_WATERMARK, LOW_WATERMARK};
+use crate::traits::actor::RPCBridgeActor;
 
-use crate::rpc::RPCActor;
-use crate::session::RPCSessionActor;
+use super::rpc::RPCActor;
+use super::session::RPCSessionActor;
 
 pub(crate) struct RPCListenActor<A: RPCBridgeActor> {
     pub rpc_addr: Addr<RPCActor<A>>,

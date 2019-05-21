@@ -2,18 +2,18 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 
-use actor::prelude::*;
-use crypto::hash::H256;
-use crypto::keypair::{PrivateKey, PublicKey};
-use primitives::functions::{try_resend_times, DEFAULT_TIMES};
-use primitives::types::GroupID;
-use traits::actor::P2PBridgeActor;
-use traits::message::p2p_message::*;
+use crate::actor::prelude::*;
+use crate::crypto::hash::H256;
+use crate::crypto::keypair::{PrivateKey, PublicKey};
+use crate::primitives::functions::{try_resend_times, DEFAULT_TIMES};
+use crate::primitives::types::GroupID;
+use crate::traits::actor::P2PBridgeActor;
+use crate::traits::message::p2p_message::*;
 
-use crate::codec::P2PHead;
-use crate::content::P2PContent;
-use crate::dht::DHTTable;
-use crate::session::{P2PAddrMessage, P2PMessage, P2PSessionActor};
+use super::codec::P2PHead;
+use super::content::P2PContent;
+use super::dht::DHTTable;
+use super::session::{P2PAddrMessage, P2PMessage, P2PSessionActor};
 
 /// p2p actor service.
 /// it will handle every event message and p2p peer.

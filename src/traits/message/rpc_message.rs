@@ -1,9 +1,9 @@
 use std::net::SocketAddr;
 
-use actor::prelude::{Addr, Message};
-use primitives::types::{BlockByte, EventID, GroupID, LevelPermissionByte, RPCParams};
+use crate::actor::prelude::{Addr, Message};
+use crate::primitives::types::{BlockByte, EventID, GroupID, LevelPermissionByte, RPCParams};
 
-use crate::actor::RPCBridgeActor;
+use crate::traits::actor::RPCBridgeActor;
 
 /// rpc request from local outside.
 /// Params is rpc_session_id, group_id, RPCParams, and socket_addr,

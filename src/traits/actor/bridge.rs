@@ -1,6 +1,5 @@
-use actor::prelude::*;
-
-use crate::message::bridge_message::*;
+use crate::actor::prelude::*;
+use crate::traits::message::bridge_message::*;
 
 pub trait BridgeActor<R = Context<Self>>
 where

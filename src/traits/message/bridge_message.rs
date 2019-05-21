@@ -1,11 +1,11 @@
 use std::net::SocketAddr;
 
-use actor::prelude::{Addr, Message};
-use primitives::types::{
+use crate::actor::prelude::{Addr, Message};
+use crate::primitives::types::{
     BlockByte, EventByte, EventID, GroupID, LevelPermissionByte, PeerAddr, PeerInfoByte, RPCParams,
 };
 
-use crate::actor::BridgeActor;
+use crate::traits::actor::BridgeActor;
 
 /// event from p2p network self group.
 /// Params is PeerAddr (p2p Node), Event Byte.

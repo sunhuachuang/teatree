@@ -1,7 +1,8 @@
-use primitives::types::{GroupID, PeerAddr};
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use std::fmt::Debug;
+
+use crate::primitives::types::{GroupID, PeerAddr};
 
 use super::peer::Peer;
 

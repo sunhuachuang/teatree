@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 use std::marker::Send;
 
-use actor::prelude::*;
-use p2p::P2PActor;
-use primitives::functions::{try_resend_times, DEFAULT_TIMES};
-use primitives::types::GroupID;
-use rpc::RPCActor;
-use traits::actor::{BridgeActor, P2PBridgeActor, RPCBridgeActor};
-use traits::message::bridge_message::*;
-use traits::message::p2p_message::*;
-use traits::message::rpc_message::*;
+use crate::actor::prelude::*;
+use crate::p2p::P2PActor;
+use crate::primitives::functions::{try_resend_times, DEFAULT_TIMES};
+use crate::primitives::types::GroupID;
+use crate::rpc::RPCActor;
+use crate::traits::actor::{BridgeActor, P2PBridgeActor, RPCBridgeActor};
+use crate::traits::message::bridge_message::*;
+use crate::traits::message::p2p_message::*;
+use crate::traits::message::rpc_message::*;
 
 #[derive(Clone)]
 pub struct NetworkBridgeActor<B: BridgeActor> {

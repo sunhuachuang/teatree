@@ -1,8 +1,8 @@
 use serde_derive::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
-use crypto::keypair::PublicKey;
-use primitives::types::{EventByte, PeerInfoByte};
+use crate::crypto::keypair::PublicKey;
+use crate::primitives::types::{EventByte, PeerInfoByte};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(bound = "")]

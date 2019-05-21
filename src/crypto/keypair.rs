@@ -5,7 +5,7 @@ use ed25519_dalek::Signature as EdSignature;
 pub use ed25519_dalek::{
     KEYPAIR_LENGTH, PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH as PRIVATE_KEY_LENGTH, SIGNATURE_LENGTH,
 };
-use rand::OsRng;
+use rand::rngs::OsRng;
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter, Result};
