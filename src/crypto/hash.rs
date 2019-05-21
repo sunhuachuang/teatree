@@ -49,7 +49,7 @@ impl H256 {
     pub fn from_string(s: &String) -> Result<Self, ()> {
         let string = s[2..].to_string();
 
-        if string.len() != 32 {
+        if string.len() != 64 {
             return Err(());
         }
 
@@ -65,7 +65,7 @@ impl H256 {
     pub fn from_str(s: &str) -> Result<Self, ()> {
         let string = &s[2..].to_string();
 
-        if string.len() != 32 {
+        if string.len() != 64 {
             return Err(());
         }
 
@@ -123,7 +123,7 @@ impl H512 {
     pub fn from_string(s: &String) -> Result<Self, ()> {
         let string = s[2..].to_string();
 
-        if string.len() != 64 {
+        if string.len() != 128 {
             return Err(());
         }
 
@@ -138,8 +138,7 @@ impl H512 {
 
     pub fn from_str(s: &str) -> Result<Self, ()> {
         let string = &s[2..].to_string();
-
-        if string.len() != 64 {
+        if string.len() != 128 {
             return Err(());
         }
 
