@@ -1,0 +1,11 @@
+[package]
+name = "actor"
+version = "0.0.1"
+authors = ["sun <huachuang20@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+actix = "0.8"
+actix_derive = "0.4"
+tokio = "0.1"
+futures = "0.1"
