@@ -14,12 +14,12 @@ toml = "0.5"
 serde = "1"
 serde_derive = "1"
 
-crypto = { path = "crypto" }
-primitives = { path = "primitives" }
-traits = { path = "traits" }
-p2p = { path = "p2p" }
-rpc = { path = "rpc" }
-actor = { path = "actor" }
+crypto = { version = "0.0.1", path = "crypto" }
+primitives = { version = "0.0.1", path = "primitives" }
+traits = { version = "0.0.1", path = "traits" }
+p2p = { version = "0.0.1", path = "p2p" }
+rpc = { version = "0.0.1", path = "rpc" }
+actor = { version = "0.0.1", path = "actor" }
 
 [workspace]
 members = ["crypto", "primitives", "traits", "p2p", "rpc", "actor"]
