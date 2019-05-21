@@ -1,6 +1,6 @@
 [package]
 name = "inner_storage"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["sun <huachuang20@gmail.com>"]
 edition = "2018"
 
