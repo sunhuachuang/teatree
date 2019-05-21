@@ -958,7 +958,7 @@ dependencies = [
 
 [[package]]
 name = "teatree"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "actix 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix_derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
