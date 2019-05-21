@@ -1054,7 +1054,7 @@ dependencies = [
 
 [[package]]
 name = "teatree"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
  "actor 0.0.1",
  "crypto 0.1.0",
