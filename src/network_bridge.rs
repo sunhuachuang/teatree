@@ -15,7 +15,6 @@ use crate::traits::message::rpc_message::*;
 pub struct NetworkBridgeActor<B: BridgeActor> {
     p2p_addr: Addr<P2PActor<Self>>,
     rpc_addr: Addr<RPCActor<Self>>,
-    //inner_storage_addr: Addr<InnerStorageActor>
     bridges: HashMap<GroupID, Addr<B>>,
 }
 

@@ -14,7 +14,7 @@ impl DiskDatabase {
     pub fn new(path: Option<PathBuf>) -> Self {
         let path = if path.is_none() {
             let mut path = get_default_storage_path();
-            path.push("/storage");
+            path.push("storage");
             path
         } else {
             path.unwrap()

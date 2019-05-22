@@ -1,3 +1,4 @@
+use serde_derive::{Deserialize, Serialize};
 use std::collections::hash_map::HashMap;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
@@ -7,11 +8,14 @@ use crate::crypto::keypair::PublicKey;
 use super::binary_tree::Node;
 //use crate::storage::append_node_list;
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub(crate) struct DHTTable {
     cells: Node,
+    #[serde(skip)]
     need_hb: HashMap<PublicKey, SocketAddr>,
+    #[serde(skip)]
     heartbeating: HashMap<PublicKey, Instant>,
+    #[serde(skip)]
     tmp_cells: HashMap<PublicKey, Option<SocketAddr>>,
 }
 
@@ -105,17 +109,18 @@ impl DHTTable {
         }
     }
 
-    pub fn fixed_peer(&mut self, pk: &PublicKey) {
+    pub fn fixed_peer(&mut self, pk: &PublicKey) -> bool {
         if self.cells.contains(pk) {
-            return;
+            return false;
         }
 
         if let Some(sock) = self.tmp_cells.remove(pk) {
             if sock.is_some() {
-                self.add_peer(pk, sock.unwrap());
+                return self.add_peer(pk, sock.unwrap());
             }
             //append_node_list(self.cells.pk(), vec![(pk.clone(), sock)]);
         }
+        return false;
     }
 
     pub fn fixed_tmp_peer(&mut self, pk: &PublicKey, socket_addr: SocketAddr) {

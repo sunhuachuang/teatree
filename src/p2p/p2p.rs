@@ -1,3 +1,4 @@
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
@@ -5,8 +6,10 @@ use std::time::{Duration, Instant};
 use crate::actor::prelude::*;
 use crate::crypto::hash::H256;
 use crate::crypto::keypair::{PrivateKey, PublicKey};
+use crate::primitives::functions::get_default_storage_path;
 use crate::primitives::functions::{try_resend_times, DEFAULT_TIMES};
 use crate::primitives::types::GroupID;
+use crate::storage::{DiskStorageActor, Entity, EntityRead, EntityWrite};
 use crate::traits::actor::P2PBridgeActor;
 use crate::traits::message::p2p_message::*;
 
@@ -24,6 +27,7 @@ pub struct P2PActor<A: P2PBridgeActor> {
     psk: PrivateKey,
     pk: PublicKey,
     bridge: Option<Addr<A>>,
+    storage: Addr<DiskStorageActor>,
     tables: HashMap<GroupID, DHTTable>,
     session: Addr<P2PSessionActor<A>>,
     holepunching: HashMap<PublicKey, (Instant, SocketAddr, GroupID, Vec<P2PMessage>)>,
@@ -38,12 +42,19 @@ impl<A: P2PBridgeActor> P2PActor<A> {
             psk.unwrap()
         };
         let pk = psk.generate_public_key();
+        let mut path = get_default_storage_path();
+        path.push("p2p");
+        path.push(format!("{}", pk));
+
+        let storage = DiskStorageActor::run(Some(path));
+
         // load psk and tables
         Self {
             version: 1u16,
             psk: psk,
             pk: pk,
             bridge: None,
+            storage: storage,
             tables: HashMap::new(), // load
             session: session,
             holepunching: HashMap::new(),
@@ -164,6 +175,9 @@ impl<A: P2PBridgeActor> Actor for P2PActor<A> {
             DEFAULT_TIMES,
         )
         .map_err(|_| println!("Send p2p addr to session fail"));
+
+        DHTTableStore::async_load(&self.pk, &self.storage, self, ctx);
+
         self.hb(ctx);
     }
 }
@@ -173,6 +187,7 @@ impl<A: P2PBridgeActor> Handler<P2PBridgeAddrMessage<A>> for P2PActor<A> {
 
     fn handle(&mut self, msg: P2PBridgeAddrMessage<A>, _ctx: &mut Self::Context) -> Self::Result {
         self.bridge = Some(msg.0);
+        // load saved tables
     }
 }
 
@@ -269,10 +284,14 @@ impl<A: P2PBridgeActor> Handler<ReceivePeerJoinResultMessage> for P2PActor<A> {
     ) -> Self::Result {
         let (group, peer_addr, result, helps) = (msg.0, msg.1, msg.2, msg.3);
         println!("DEBUG: peer join: {}", result);
-        if let Some(table) = self.tables.get_mut(&group) {
+        let need_store = if let Some(table) = self.tables.get_mut(&group) {
+            let mut need_store = false;
             if let Some(socket) = table.get_socket_addr(&peer_addr) {
                 if result {
-                    table.fixed_peer(&peer_addr);
+                    if table.fixed_peer(&peer_addr) {
+                        need_store = true;
+                    }
+
                     let dht = helps
                         .iter()
                         .filter_map(|peer_addr| {
@@ -299,6 +318,13 @@ impl<A: P2PBridgeActor> Handler<ReceivePeerJoinResultMessage> for P2PActor<A> {
                     ));
                 }
             }
+            need_store
+        } else {
+            false
+        };
+
+        if need_store {
+            DHTTableStore::async_store(self.pk.clone(), self.tables.clone(), &self.storage);
         }
     }
 }
@@ -380,7 +406,10 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PActor<A> {
             }
             P2PContent::DHT(mut pk_sockets) => {
                 println!("DEBUG: receive DHT {}", from);
-                table.fixed_peer(&from);
+                if table.fixed_peer(&from) {
+                    DHTTableStore::async_store(self.pk.clone(), self.tables.clone(), &self.storage);
+                }
+
                 let pks = pk_sockets.iter().map(|(pk, _)| pk.clone()).collect();
                 self.send_bridge(ReceivePeerJoinResultMessage(group.clone(), from, true, pks));
                 loop {
@@ -463,5 +492,56 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PActor<A> {
             }
             _ => {}
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct DHTTableStore(PublicKey, HashMap<GroupID, DHTTable>);
+
+impl Entity for DHTTableStore {
+    type Key = String;
+
+    fn key(&self) -> Self::Key {
+        format!("{}", self.0)
+    }
+}
+
+impl DHTTableStore {
+    pub fn async_store(
+        pk: PublicKey,
+        table: HashMap<GroupID, DHTTable>,
+        addr: &Addr<DiskStorageActor>,
+    ) {
+        let _ = try_resend_times(
+            addr.clone(),
+            EntityWrite(DHTTableStore(pk, table)),
+            DEFAULT_TIMES,
+        )
+        .map_err(|_| println!("Send to storage fail"));
+    }
+
+    pub fn async_load<A: P2PBridgeActor>(
+        pk: &PublicKey,
+        addr: &Addr<DiskStorageActor>,
+        p2p_actor: &P2PActor<A>,
+        ctx: &mut <P2PActor<A> as Actor>::Context,
+    ) {
+        let storage_addr = addr.clone();
+        storage_addr
+            .send(EntityRead::<DHTTableStore>(format!("{}", pk)))
+            .into_actor(p2p_actor)
+            .then(move |res, act, _ctx| {
+                match res {
+                    Ok(Ok(e)) => act.tables = e.1,
+                    _ => {}
+                }
+
+                actor_ok(())
+            })
+            .wait(ctx);
+    }
+
+    pub fn _async_delete(pk: PublicKey, _addr: &Addr<DiskStorageActor>) {
+        println!("DEBUG: async delete tables: {}", pk);
     }
 }

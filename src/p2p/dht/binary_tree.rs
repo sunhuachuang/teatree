@@ -1,3 +1,4 @@
+use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::iter::Iterator;
 use std::net::SocketAddr;
@@ -10,7 +11,7 @@ use super::distance::Distance;
 
 type TreeNode = Option<Box<Node>>;
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub(crate) struct Node {
     left: TreeNode,
     right: TreeNode,
