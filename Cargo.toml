@@ -31,3 +31,4 @@ jsonrpc-parse = "0.1.2"
 dirs = "1.0"
 failure = "0.1"
 
+sled = "0.24"

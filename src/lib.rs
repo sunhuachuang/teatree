@@ -8,6 +8,7 @@ pub mod crypto;
 pub mod p2p;
 pub mod primitives;
 pub mod rpc;
+pub mod storage;
 pub mod traits;
 
 use actor::prelude::{Actor, Addr, System, SystemRunner};
