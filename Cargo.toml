@@ -27,7 +27,7 @@ rand = "0.6"
 sha3 = "^0.7"
 ed25519-dalek = { version="1.0.0-pre.0", features = ["serde"]}
 
-jsonrpc-parse = "0.1.1"
+jsonrpc-parse = "0.1.2"
 dirs = "1.0"
 failure = "0.1"
 
