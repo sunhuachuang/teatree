@@ -49,11 +49,16 @@ pub fn parse_http_body_json(bytes: &mut BytesMut) -> Result<Value, ()> {
 }
 
 pub fn get_default_storage_path() -> PathBuf {
+    #[cfg(feature = "dev")]
+    let mut path = PathBuf::from("./");
+
+    #[cfg(not(feature = "dev"))]
     let mut path = if dirs::home_dir().is_some() {
         dirs::home_dir().unwrap()
     } else {
         PathBuf::from("./")
     };
+
     path.push(DEFAULT_STORAGE_DIR_NAME);
     path
 }
