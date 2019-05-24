@@ -25,3 +25,11 @@ pub struct EntityWrite<E: Entity>(pub E);
 impl<E: Entity> Message for EntityWrite<E> {
     type Result = ();
 }
+
+/// delete message
+#[derive(Clone)]
+pub struct EntityDelete<E: 'static + Entity>(pub E::Key);
+
+impl<E: 'static + Entity> Message for EntityDelete<E> {
+    type Result = Result<E, ()>;
+}

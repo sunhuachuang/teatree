@@ -38,12 +38,33 @@ impl DiskDatabase {
         }
     }
 
+    pub fn delete(&self, key: &impl AsRef<[u8]>) -> Result<Vec<u8>, ()> {
+        if let Ok(Some(data)) = self.db.del(key) {
+            Ok(data.to_vec())
+        } else {
+            Err(())
+        }
+    }
+
     pub fn write_entity<E: Entity>(&self, entity: E) {
         self.write(entity.key(), bincode::serialize(&entity).unwrap())
     }
 
     pub fn read_entity<E: Entity>(&self, key: E::Key) -> Result<E, ()> {
         if let Ok(data) = self.read(&key) {
+            let e = bincode::deserialize(&data);
+            if e.is_ok() {
+                Ok(e.unwrap())
+            } else {
+                Err(())
+            }
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn delete_entity<E: Entity>(&self, key: E::Key) -> Result<E, ()> {
+        if let Ok(data) = self.delete(&key) {
             let e = bincode::deserialize(&data);
             if e.is_ok() {
                 Ok(e.unwrap())
