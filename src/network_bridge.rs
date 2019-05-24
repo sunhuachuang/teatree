@@ -254,6 +254,14 @@ impl<B: BridgeActor> Handler<ReceiveLocalMessage> for NetworkBridgeActor<B> {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveLocalMessage, _ctx: &mut Self::Context) -> Self::Result {
+        if !self.bridges.contains_key(&msg.0) {
+            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
+                msg.0.clone(),
+                msg.1,
+                false,
+            ));
+        }
+
         self.send_bridge(msg.0.clone(), LocalMessage(msg.0, msg.1, msg.2, msg.3));
     }
 }
@@ -263,6 +271,14 @@ impl<B: BridgeActor> Handler<ReceiveUpperMessage> for NetworkBridgeActor<B> {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveUpperMessage, _ctx: &mut Self::Context) -> Self::Result {
+        if !self.bridges.contains_key(&msg.0) {
+            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
+                msg.0.clone(),
+                msg.1,
+                false,
+            ));
+        }
+
         self.send_bridge(msg.0.clone(), UpperMessage(msg.0, msg.1, msg.2));
     }
 }
@@ -272,6 +288,14 @@ impl<B: BridgeActor> Handler<ReceiveLowerMessage> for NetworkBridgeActor<B> {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveLowerMessage, _ctx: &mut Self::Context) -> Self::Result {
+        if !self.bridges.contains_key(&msg.0) {
+            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
+                msg.0.clone(),
+                msg.1,
+                false,
+            ));
+        }
+
         self.send_bridge(msg.0.clone(), LowerMessage(msg.0, msg.1, msg.2));
     }
 }
@@ -284,6 +308,14 @@ impl<B: BridgeActor> Handler<ReceiveLevelPermissionMessage> for NetworkBridgeAct
         msg: ReceiveLevelPermissionMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
+        if !self.bridges.contains_key(&msg.0) {
+            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
+                msg.0.clone(),
+                msg.1,
+                false,
+            ));
+        }
+
         self.send_bridge(
             msg.0.clone(),
             LevelPermissionMessage(msg.0, msg.1, msg.2, msg.3),
