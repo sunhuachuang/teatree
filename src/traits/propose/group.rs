@@ -9,7 +9,7 @@ use super::peer::Peer;
 /// This is the interface of the group in the entire network,
 /// you can customize the implementation of these methods,
 /// you can set the permission or size of the group
-pub trait Group<P: Peer>: Clone + Send + Default + Debug + Serialize + DeserializeOwned {
+pub trait Group<P: Peer> {
     type JoinType: Clone + Send + Default + Debug + Serialize + DeserializeOwned;
 
     /// id: it will return group's id
