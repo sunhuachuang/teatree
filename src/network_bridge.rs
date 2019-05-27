@@ -177,7 +177,6 @@ impl<B: BridgeActor> Handler<PeerJoinMessage> for NetworkBridgeActor<B> {
     type Result = ();
 
     fn handle(&mut self, msg: PeerJoinMessage, _ctx: &mut Self::Context) -> Self::Result {
-        println!("DEBUG: network receive peer join: {}", msg.1);
         self.send_p2p(ReceivePeerJoinMessage(msg.0, msg.1, msg.2, msg.3));
     }
 }

@@ -198,6 +198,10 @@ impl<A: P2PBridgeActor> Handler<ReceiveEventMessage> for P2PActor<A> {
 
     fn handle(&mut self, msg: ReceiveEventMessage, _ctx: &mut Self::Context) -> Self::Result {
         let (group, peer_addr, event) = (msg.0, msg.1, msg.2);
+        if peer_addr == self.pk {
+            return self.send_bridge(ReceiveEventMessage(group, peer_addr, event));
+        }
+
         if let Some(table) = self.tables.get(&group) {
             if self.holepunching.contains_key(&peer_addr) {
                 let socket = self
