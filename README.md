@@ -7,6 +7,10 @@
 
 **(WIP) NOT USE UNTIL v0.1**
 
+![Tea Tree1](https://github.com/placefortea/placefortea.github.io/raw/master/assets/tea_tree_1.png)
+
+![Tea Tree2](https://github.com/placefortea/placefortea.github.io/raw/master/assets/tea_tree_2.png)
+
 ## License
 
 This project is licensed under either of
