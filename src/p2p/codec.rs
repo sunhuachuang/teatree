@@ -90,15 +90,15 @@ impl P2PHead {
         };
         let mut from_bytes = [0u8; PUBLIC_KEY_LENGTH];
         from_bytes.copy_from_slice(&bytes[38..BEFORE_TO_LENGTH]);
-        let from = PublicKey::from_bytes(&from_bytes);
+        let from = PublicKey::from_bytes(&from_bytes).unwrap_or(Default::default());
 
         let mut to_bytes = [0u8; PUBLIC_KEY_LENGTH];
         to_bytes.copy_from_slice(&bytes[BEFORE_TO_LENGTH..BEFORE_SIGN_LENGTH]);
-        let to = PublicKey::from_bytes(&to_bytes);
+        let to = PublicKey::from_bytes(&to_bytes).unwrap_or(Default::default());
 
         let mut sign_bytes = [0u8; SIGNATURE_LENGTH];
         sign_bytes.copy_from_slice(&bytes[BEFORE_SIGN_LENGTH..HEAD_LENGTH]);
-        let sign = Signature::from_bytes(&sign_bytes);
+        let sign = Signature::from_bytes(&sign_bytes).unwrap_or(Default::default());
 
         Self {
             len,

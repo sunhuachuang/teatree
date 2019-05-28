@@ -114,4 +114,12 @@ pub trait Peer: Default + Clone + Debug + Sync + Send + Serialize + DeserializeO
     fn xor(&self, other_peer: &impl Peer) -> Binary {
         self.binary().xor(&other_peer.binary())
     }
+
+    fn public_key_from_bytes(bytes: &[u8]) -> Option<Self::PublicKey>;
+
+    fn public_key_to_bytes(pk: &Self::PublicKey) -> Vec<u8>;
+
+    fn private_key_from_bytes(bytes: &[u8]) -> Option<Self::PrivateKey>;
+
+    fn private_key_to_bytes(psk: &Self::PrivateKey) -> Vec<u8>;
 }

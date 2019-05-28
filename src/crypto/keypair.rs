@@ -70,14 +70,24 @@ impl PrivateKey {
         Signature { signature }
     }
 
-    pub fn from_bytes(private_key_bytes: &[u8; PRIVATE_KEY_LENGTH]) -> PrivateKey {
-        let private_key = EdPrivateKey::from_bytes(private_key_bytes).unwrap();
+    pub fn from_bytes(private_key_bytes: &[u8]) -> Option<PrivateKey> {
+        if private_key_bytes.len() != PRIVATE_KEY_LENGTH {
+            return None;
+        }
 
-        PrivateKey { private_key }
+        let private_key = EdPrivateKey::from_bytes(private_key_bytes);
+
+        if private_key.is_err() {
+            return None;
+        }
+
+        Some(PrivateKey {
+            private_key: private_key.unwrap(),
+        })
     }
 
-    pub fn to_bytes(&self) -> [u8; PRIVATE_KEY_LENGTH] {
-        self.private_key.as_bytes().clone()
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.private_key.as_bytes().to_vec()
     }
 
     pub fn len(&self) -> usize {
@@ -98,13 +108,23 @@ impl PublicKey {
             .is_ok()
     }
 
-    pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_LENGTH] {
-        self.public_key.to_bytes()
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.public_key.as_bytes().to_vec()
     }
 
-    pub fn from_bytes(public_key_bytes: &[u8; PUBLIC_KEY_LENGTH]) -> PublicKey {
-        let public_key = EdPublicKey::from_bytes(public_key_bytes).unwrap();
-        PublicKey { public_key }
+    pub fn from_bytes(public_key_bytes: &[u8]) -> Option<PublicKey> {
+        if public_key_bytes.len() != PUBLIC_KEY_LENGTH {
+            return None;
+        }
+
+        let public_key = EdPublicKey::from_bytes(public_key_bytes);
+        if public_key.is_err() {
+            return None;
+        }
+
+        Some(PublicKey {
+            public_key: public_key.unwrap(),
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -113,14 +133,23 @@ impl PublicKey {
 }
 
 impl Signature {
-    pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
-        self.signature.to_bytes()
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.signature.to_bytes().to_vec()
     }
 
-    pub fn from_bytes(signature_bytes: &[u8; SIGNATURE_LENGTH]) -> Signature {
-        let signature = EdSignature::from_bytes(signature_bytes).unwrap();
+    pub fn from_bytes(signature_bytes: &[u8]) -> Option<Signature> {
+        if signature_bytes.len() != SIGNATURE_LENGTH {
+            return None;
+        }
 
-        Signature { signature }
+        let signature = EdSignature::from_bytes(signature_bytes);
+        if signature.is_err() {
+            return None;
+        }
+
+        Some(Signature {
+            signature: signature.unwrap(),
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -145,7 +174,7 @@ impl From<&String> for PrivateKey {
             let res = u8::from_str_radix(&string[2 * i..2 * i + 2], 16).unwrap();
             bytes[i] = res;
         }
-        Self::from_bytes(&bytes)
+        Self::from_bytes(&bytes).unwrap_or(Default::default())
     }
 }
 
@@ -158,7 +187,7 @@ impl From<String> for PrivateKey {
             let res = u8::from_str_radix(&string[2 * i..2 * i + 2], 16).unwrap();
             bytes[i] = res;
         }
-        Self::from_bytes(&bytes)
+        Self::from_bytes(&bytes).unwrap_or(Default::default())
     }
 }
 
@@ -187,7 +216,7 @@ impl From<&String> for PublicKey {
             let res = u8::from_str_radix(&string[2 * i..2 * i + 2], 16).unwrap();
             bytes[i] = res;
         }
-        Self::from_bytes(&bytes)
+        Self::from_bytes(&bytes).unwrap_or(Default::default())
     }
 }
 
@@ -200,7 +229,7 @@ impl From<String> for PublicKey {
             let res = u8::from_str_radix(&string[2 * i..2 * i + 2], 16).unwrap();
             bytes[i] = res;
         }
-        Self::from_bytes(&bytes)
+        Self::from_bytes(&bytes).unwrap_or(Default::default())
     }
 }
 
@@ -229,7 +258,7 @@ impl From<&String> for Signature {
             let res = u8::from_str_radix(&string[2 * i..2 * i + 2], 16).unwrap();
             bytes[i] = res;
         }
-        Self::from_bytes(&bytes)
+        Self::from_bytes(&bytes).unwrap_or(Default::default())
     }
 }
 
@@ -242,13 +271,13 @@ impl From<String> for Signature {
             let res = u8::from_str_radix(&string[2 * i..2 * i + 2], 16).unwrap();
             bytes[i] = res;
         }
-        Self::from_bytes(&bytes)
+        Self::from_bytes(&bytes).unwrap_or(Default::default())
     }
 }
 
 impl Clone for PrivateKey {
     fn clone(&self) -> PrivateKey {
-        PrivateKey::from_bytes(&self.to_bytes())
+        PrivateKey::from_bytes(&self.to_bytes()).unwrap()
     }
 }
 
@@ -262,19 +291,19 @@ impl Debug for PrivateKey {
 
 impl Default for PrivateKey {
     fn default() -> PrivateKey {
-        PrivateKey::from_bytes(&[0; PRIVATE_KEY_LENGTH])
+        PrivateKey::from_bytes(&[0; PRIVATE_KEY_LENGTH]).unwrap()
     }
 }
 
 impl Default for PublicKey {
     fn default() -> PublicKey {
-        PublicKey::from_bytes(&[0; PUBLIC_KEY_LENGTH])
+        PublicKey::from_bytes(&[0; PUBLIC_KEY_LENGTH]).unwrap()
     }
 }
 
 impl Default for Signature {
     fn default() -> Signature {
-        Signature::from_bytes(&[0; SIGNATURE_LENGTH])
+        Signature::from_bytes(&[0; SIGNATURE_LENGTH]).unwrap()
     }
 }
 
