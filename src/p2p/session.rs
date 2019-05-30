@@ -65,23 +65,25 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
 
     fn handle(&mut self, msg: P2PMessage, _ctx: &mut Context<Self>) {
         self.waitings.push(((msg.0, P2PBody(msg.1)), msg.2));
+        if self.sinks.is_empty() {
+            return;
+        }
 
         while !self.waitings.is_empty() {
             let w = self.waitings.remove(0);
             if self.sinks.is_empty() {
                 self.waitings.push(w);
-                println!("LOST UDP Sink");
                 break;
-            } else {
-                let sink = self.sinks.pop().unwrap();
-                let _ = sink
-                    .send(w)
-                    .and_then(|sink| {
-                        self.sinks.push(sink);
-                        futures::future::ok(())
-                    })
-                    .wait();
             }
+
+            let sink = self.sinks.pop().unwrap();
+            let _ = sink
+                .send(w)
+                .and_then(|sink| {
+                    self.sinks.push(sink);
+                    futures::future::ok(())
+                })
+                .wait();
         }
     }
 }
