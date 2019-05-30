@@ -1,5 +1,5 @@
 use futures::stream::SplitSink;
-use futures::{Future, Sink};
+use futures::Sink;
 use std::net::SocketAddr;
 use tokio::net::UdpFramed;
 
@@ -63,7 +63,7 @@ impl<A: P2PBridgeActor> StreamHandler<P2PMessage, std::io::Error> for P2PSession
 impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
     type Result = ();
 
-    fn handle(&mut self, msg: P2PMessage, _ctx: &mut Context<Self>) {
+    fn handle(&mut self, msg: P2PMessage, ctx: &mut Context<Self>) {
         self.waitings.push(((msg.0, P2PBody(msg.1)), msg.2));
         if self.sinks.is_empty() {
             return;
@@ -79,11 +79,16 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
             let sink = self.sinks.pop().unwrap();
             let _ = sink
                 .send(w)
-                .and_then(|sink| {
-                    self.sinks.push(sink);
-                    futures::future::ok(())
+                .into_actor(self)
+                .then(|res, act, _ctx| {
+                    match res {
+                        Ok(sink) => act.sinks.push(sink),
+                        Err(_) => (),
+                    }
+
+                    actor_ok(())
                 })
-                .wait();
+                .wait(ctx);
         }
     }
 }
