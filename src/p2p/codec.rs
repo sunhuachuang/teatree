@@ -143,18 +143,12 @@ impl Decoder for P2PCodec {
 }
 
 impl Encoder for P2PCodec {
-    type Item = (P2PHead, P2PBody);
+    type Item = Vec<u8>;
     type Error = std::io::Error;
 
-    fn encode(&mut self, mut msg: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let body_bytes: Vec<u8> = bincode::serialize(&msg.1).unwrap_or(vec![]);
-        let body_ref: &[u8] = body_bytes.as_ref();
-        msg.0.update_len(body_ref.len() as u32);
-        let head_bytes = msg.0.encode();
-
-        dst.reserve(body_ref.len() + head_bytes.len());
-        dst.put(&head_bytes[..]);
-        dst.put(body_ref);
+    fn encode(&mut self, msg: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        dst.reserve(msg.len());
+        dst.put(msg);
 
         Ok(())
     }

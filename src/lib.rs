@@ -1,3 +1,5 @@
+#![feature(vec_drain_as_slice)]
+
 use std::net::SocketAddr;
 
 mod config;

@@ -30,7 +30,39 @@ impl<A: P2PBridgeActor> Message for P2PAddrMessage<A> {
 pub struct P2PSessionActor<A: P2PBridgeActor> {
     pub sinks: Vec<SplitSink<UdpFramed<P2PCodec>>>,
     pub p2p_addr: Option<Addr<P2PActor<A>>>,
-    pub waitings: Vec<((P2PHead, P2PBody), SocketAddr)>,
+    pub waitings: Vec<(P2PHead, P2PBody, SocketAddr)>,
+    pub times: u32,
+}
+
+impl<A: P2PBridgeActor> P2PSessionActor<A> {
+    fn send_udp(&mut self, mut bytes: Vec<u8>, socket: SocketAddr, ctx: &mut Context<Self>) {
+        let (now, next) = if bytes.len() > 65500 {
+            let now = bytes.drain(0..65500).as_slice().into();
+            (now, bytes)
+        } else {
+            (bytes, vec![])
+        };
+
+        let sink = self.sinks.pop().unwrap();
+
+        let _ = sink
+            .send((now, socket.clone()))
+            .into_actor(self)
+            .then(move |res, act, ctx| {
+                match res {
+                    Ok(sink) => {
+                        act.sinks.push(sink);
+                        if !next.is_empty() {
+                            act.send_udp(next, socket, ctx);
+                        }
+                    }
+                    Err(_) => (),
+                }
+
+                actor_ok(())
+            })
+            .wait(ctx);
+    }
 }
 
 impl<A: P2PBridgeActor> Actor for P2PSessionActor<A> {
@@ -64,7 +96,9 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
     type Result = ();
 
     fn handle(&mut self, msg: P2PMessage, ctx: &mut Context<Self>) {
-        self.waitings.push(((msg.0, P2PBody(msg.1)), msg.2));
+        self.times += 1;
+        println!("{}", self.times);
+        self.waitings.push((msg.0, P2PBody(msg.1), msg.2));
         if self.sinks.is_empty() {
             return;
         }
@@ -75,20 +109,16 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
                 self.waitings.push(w);
                 break;
             }
+            let (mut head, body, socket) = (w.0, w.1, w.2);
 
-            let sink = self.sinks.pop().unwrap();
-            let _ = sink
-                .send(w)
-                .into_actor(self)
-                .then(|res, act, _ctx| {
-                    match res {
-                        Ok(sink) => act.sinks.push(sink),
-                        Err(_) => (),
-                    }
+            let mut body_bytes: Vec<u8> = bincode::serialize(&body).unwrap_or(vec![]);
+            head.update_len(body_bytes.len() as u32);
+            let mut head_bytes = head.encode().to_vec();
+            let mut bytes = vec![];
+            bytes.append(&mut head_bytes);
+            bytes.append(&mut body_bytes);
 
-                    actor_ok(())
-                })
-                .wait(ctx);
+            self.send_udp(bytes, socket, ctx);
         }
     }
 }
