@@ -43,25 +43,26 @@ impl<A: P2PBridgeActor> P2PSessionActor<A> {
             (bytes, vec![])
         };
 
-        let sink = self.sinks.pop().unwrap();
-
-        let _ = sink
-            .send((now, socket.clone()))
-            .into_actor(self)
-            .then(move |res, act, ctx| {
-                match res {
-                    Ok(sink) => {
-                        act.sinks.push(sink);
-                        if !next.is_empty() {
-                            act.send_udp(next, socket, ctx);
+        self.sinks.pop().and_then(|sink| {
+            let _ = sink
+                .send((now, socket.clone()))
+                .into_actor(self)
+                .then(move |res, act, ctx| {
+                    match res {
+                        Ok(sink) => {
+                            act.sinks.push(sink);
+                            if !next.is_empty() {
+                                act.send_udp(next, socket, ctx);
+                            }
                         }
+                        Err(_) => panic!("DEBUG: NETWORK HAVE ERROR"),
                     }
-                    Err(_) => (),
-                }
 
-                actor_ok(())
-            })
-            .wait(ctx);
+                    actor_ok(())
+                })
+                .wait(ctx);
+            Some(())
+        });
     }
 }
 
