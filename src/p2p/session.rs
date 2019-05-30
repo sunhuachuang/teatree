@@ -71,6 +71,7 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
             if self.sinks.is_empty() {
                 self.waitings.push(w);
                 println!("LOST UDP Sink");
+                break;
             } else {
                 let sink = self.sinks.pop().unwrap();
                 let _ = sink
