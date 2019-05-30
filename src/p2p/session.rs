@@ -64,11 +64,14 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
     type Result = ();
 
     fn handle(&mut self, msg: P2PMessage, _ctx: &mut Context<Self>) {
-        let work = ((msg.0, P2PBody(msg.1)), msg.2);
-        if self.sinks.len() > 0 {
-            self.waitings.push(work);
-            while !self.waitings.is_empty() {
-                let w = self.waitings.remove(0);
+        self.waitings.push(((msg.0, P2PBody(msg.1)), msg.2));
+
+        while !self.waitings.is_empty() {
+            let w = self.waitings.remove(0);
+            if self.sinks.is_empty() {
+                self.waitings.push(w);
+                println!("LOST UDP Sink");
+            } else {
                 let sink = self.sinks.pop().unwrap();
                 let _ = sink
                     .send(w)
@@ -78,8 +81,6 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
                     })
                     .wait();
             }
-        } else {
-            self.waitings.push(work);
         }
     }
 }
