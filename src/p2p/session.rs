@@ -30,6 +30,7 @@ impl<A: P2PBridgeActor> Message for P2PAddrMessage<A> {
 pub struct P2PSessionActor<A: P2PBridgeActor> {
     pub sinks: Vec<SplitSink<UdpFramed<P2PCodec>>>,
     pub p2p_addr: Option<Addr<P2PActor<A>>>,
+    pub waitings: Vec<((P2PHead, P2PBody), SocketAddr)>,
 }
 
 impl<A: P2PBridgeActor> Actor for P2PSessionActor<A> {
@@ -63,17 +64,22 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
     type Result = ();
 
     fn handle(&mut self, msg: P2PMessage, _ctx: &mut Context<Self>) {
+        let work = ((msg.0, P2PBody(msg.1)), msg.2);
         if self.sinks.len() > 0 {
-            let sink = self.sinks.pop().unwrap();
-            let _ = sink
-                .send(((msg.0, P2PBody(msg.1)), msg.2))
-                .and_then(|sink| {
-                    self.sinks.push(sink);
-                    futures::future::ok(())
-                })
-                .wait();
+            self.waitings.push(work);
+            while !self.waitings.is_empty() {
+                let w = self.waitings.remove(0);
+                let sink = self.sinks.pop().unwrap();
+                let _ = sink
+                    .send(w)
+                    .and_then(|sink| {
+                        self.sinks.push(sink);
+                        futures::future::ok(())
+                    })
+                    .wait();
+            }
         } else {
-            println!("lost network message");
+            self.waitings.push(work);
         }
     }
 }

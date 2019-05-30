@@ -33,6 +33,7 @@ pub fn p2p_start<B: P2PBridgeActor>(
         P2PSessionActor {
             sinks: vec![sink],
             p2p_addr: None,
+            waitings: vec![],
         }
     });
 
