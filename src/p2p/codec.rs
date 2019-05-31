@@ -1,24 +1,19 @@
 use byteorder::{BigEndian, ByteOrder};
-use bytes::{BufMut, BytesMut};
 use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
-use tokio::codec::{Decoder, Encoder};
 
 use crate::crypto::keypair::{PublicKey, Signature, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 use crate::primitives::types::GroupID;
 
 use super::content::P2PContent;
 
-const HEAD_LENGTH: usize = 4 + 2 + 32 + PUBLIC_KEY_LENGTH + PUBLIC_KEY_LENGTH + SIGNATURE_LENGTH;
+pub const HEAD_LENGTH: usize =
+    4 + 2 + 32 + PUBLIC_KEY_LENGTH + PUBLIC_KEY_LENGTH + SIGNATURE_LENGTH;
 const BEFORE_TO_LENGTH: usize = 4 + 2 + 32 + PUBLIC_KEY_LENGTH;
 const BEFORE_SIGN_LENGTH: usize = 4 + 2 + 32 + PUBLIC_KEY_LENGTH + PUBLIC_KEY_LENGTH;
 
-#[derive(Default)]
-pub struct P2PCodec(HashMap<[u8; 8], Vec<u8>>);
-
 #[derive(Default, Clone, Debug)]
 pub struct P2PHead {
-    len: u32,            //[u8; 4]
+    pub len: u32,        //[u8; 4]
     pub ver: u16,        //[u8; 2]
     pub gid: GroupID,    //[u8; 32]
     pub from: PublicKey, //[u8; 32]
@@ -115,71 +110,3 @@ impl P2PHead {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(bound = "")]
 pub struct P2PBody(pub P2PContent);
-
-impl Decoder for P2PCodec {
-    type Item = (P2PHead, P2PContent);
-    type Error = std::io::Error;
-
-    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        if src.len() < 16 {
-            return Ok(None);
-        }
-        let (head_sign, new_data) = src.split_at_mut(24);
-
-        let (prev, me_next) = head_sign.split_at_mut(8);
-        let (me, next) = me_next.split_at_mut(8);
-
-        let mut prev_sign = [0u8; 8];
-        prev_sign.copy_from_slice(prev);
-        let mut sign = [0u8; 8];
-        sign.copy_from_slice(me);
-        let mut next_sign = [0u8; 8];
-        next_sign.copy_from_slice(next);
-
-        let mut data = vec![];
-
-        if let Some(mut prev_data) = self.0.remove(&prev_sign) {
-            data.append(&mut prev_data);
-        }
-
-        data.extend_from_slice(new_data);
-
-        if let Some(mut next_data) = self.0.remove(&next_sign) {
-            data.append(&mut next_data);
-        }
-
-        let head = {
-            if data.len() < HEAD_LENGTH || prev_sign != sign {
-                self.0.insert(sign, data);
-                return Ok(None);
-            }
-            P2PHead::decode(data.as_ref())
-        };
-
-        let size = head.len as usize;
-
-        if data.len() >= size + HEAD_LENGTH {
-            let (_, data) = data.split_at_mut(HEAD_LENGTH);
-            let (buf, _) = data.split_at_mut(size);
-            Ok(Some((
-                head,
-                bincode::deserialize(buf).unwrap_or(P2PContent::None),
-            )))
-        } else {
-            self.0.insert(sign, data);
-            Ok(None)
-        }
-    }
-}
-
-impl Encoder for P2PCodec {
-    type Item = Vec<u8>;
-    type Error = std::io::Error;
-
-    fn encode(&mut self, msg: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        dst.reserve(msg.len());
-        dst.put(msg);
-
-        Ok(())
-    }
-}
