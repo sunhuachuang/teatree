@@ -128,6 +128,7 @@ impl<A: P2PBridgeActor> StreamHandler<CodecMessage, std::io::Error> for P2PSessi
         let mut data = vec![];
 
         if let Some(mut prev_data) = self.receivings.remove(&prev_sign) {
+            prev_sign = sign;
             data.append(&mut prev_data);
         }
 
