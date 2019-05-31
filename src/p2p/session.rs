@@ -31,7 +31,6 @@ pub struct P2PSessionActor<A: P2PBridgeActor> {
     pub sinks: Vec<SplitSink<UdpFramed<P2PCodec>>>,
     pub p2p_addr: Option<Addr<P2PActor<A>>>,
     pub waitings: Vec<(P2PHead, P2PBody, SocketAddr)>,
-    pub times: u32,
 }
 
 impl<A: P2PBridgeActor> P2PSessionActor<A> {
@@ -97,8 +96,6 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
     type Result = ();
 
     fn handle(&mut self, msg: P2PMessage, ctx: &mut Context<Self>) {
-        self.times += 1;
-        println!("{}", self.times);
         self.waitings.push((msg.0, P2PBody(msg.1), msg.2));
         if self.sinks.is_empty() {
             return;
