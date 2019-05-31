@@ -34,24 +34,37 @@ pub struct P2PSessionActor<A: P2PBridgeActor> {
 }
 
 impl<A: P2PBridgeActor> P2PSessionActor<A> {
-    fn send_udp(&mut self, mut bytes: Vec<u8>, socket: SocketAddr, ctx: &mut Context<Self>) {
-        let (now, next) = if bytes.len() > 65500 {
-            let now = bytes.drain(0..65500).as_slice().into();
-            (now, bytes)
+    fn send_udp(
+        &mut self,
+        mut bytes: Vec<u8>,
+        mut prev_sign: [u8; 8],
+        self_sign: [u8; 8],
+        socket: SocketAddr,
+        ctx: &mut Context<Self>,
+    ) {
+        let mut send_bytes = vec![];
+        let (mut now, next, next_sign) = if bytes.len() > 65480 {
+            let now = bytes.drain(0..65480).as_slice().into();
+            (now, bytes, rand::random())
         } else {
-            (bytes, vec![])
+            (bytes, vec![], self_sign.clone())
         };
+
+        send_bytes.extend_from_slice(&mut prev_sign);
+        send_bytes.extend_from_slice(&mut self_sign.clone());
+        send_bytes.extend_from_slice(&mut next_sign.clone());
+        send_bytes.append(&mut now);
 
         self.sinks.pop().and_then(|sink| {
             let _ = sink
-                .send((now, socket.clone()))
+                .send((send_bytes, socket.clone()))
                 .into_actor(self)
                 .then(move |res, act, ctx| {
                     match res {
                         Ok(sink) => {
                             act.sinks.push(sink);
                             if !next.is_empty() {
-                                act.send_udp(next, socket, ctx);
+                                act.send_udp(next, self_sign, next_sign, socket, ctx);
                             }
                         }
                         Err(_) => panic!("DEBUG: NETWORK HAVE ERROR"),
@@ -116,7 +129,9 @@ impl<A: P2PBridgeActor> Handler<P2PMessage> for P2PSessionActor<A> {
             bytes.append(&mut head_bytes);
             bytes.append(&mut body_bytes);
 
-            self.send_udp(bytes, socket, ctx);
+            let sign: [u8; 8] = rand::random();
+
+            self.send_udp(bytes, sign.clone(), sign, socket, ctx);
         }
     }
 }
