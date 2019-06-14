@@ -1,11 +1,9 @@
 use std::net::SocketAddr;
 
-use crate::actor::prelude::{Addr, Message};
+use crate::actor::prelude::Message;
 use crate::primitives::types::{
     BlockByte, EventByte, EventID, LevelPermissionByte, PeerAddr, PeerInfoByte, RPCParams,
 };
-
-use crate::traits::actor::BridgeActor;
 
 /// event from p2p network self group.
 /// Params is PeerAddr (p2p Node), Event Byte.
@@ -113,13 +111,5 @@ impl Message for MultipleLevelPermissionMessage {
 pub struct MultipleLevelPermissionResponseMessage(pub usize, pub bool);
 
 impl Message for MultipleLevelPermissionResponseMessage {
-    type Result = ();
-}
-
-/// when bridge start, need register addr to network bridge actor
-#[derive(Clone)]
-pub struct MultipleBridgeAddrMessage<B: BridgeActor>(pub Addr<B>);
-
-impl<B: BridgeActor> Message for MultipleBridgeAddrMessage<B> {
     type Result = ();
 }

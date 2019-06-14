@@ -45,3 +45,17 @@ pub fn network_start<A: BridgeActor>(
         NetworkBridgeActor::load(p2p_addr, rpc_addr)
     })
 }
+
+pub fn multiple_network_start(
+    p2p_socket: SocketAddr,
+    rpc_socket: SocketAddr,
+    psk: Option<PrivateKey>,
+) -> Addr<NetworkBridgeActor<MultipleNetworkBridgeActor>> {
+    let p2p_addr = p2p_start::<NetworkBridgeActor<MultipleNetworkBridgeActor>>(p2p_socket, psk);
+    let rpc_addr = rpc_start::<NetworkBridgeActor<MultipleNetworkBridgeActor>>(rpc_socket);
+
+    NetworkBridgeActor::create(|ctx| {
+        ctx.set_mailbox_capacity(100);
+        NetworkBridgeActor::load(p2p_addr, rpc_addr)
+    })
+}
