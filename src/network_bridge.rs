@@ -12,13 +12,34 @@ use crate::traits::message::p2p_message::*;
 use crate::traits::message::rpc_message::*;
 
 #[derive(Clone)]
-pub struct NetworkBridgeActor<B: BridgeActor> {
-    p2p_addr: Addr<P2PActor<Self>>,
-    rpc_addr: Addr<RPCActor<Self>>,
-    bridges: HashMap<GroupID, Addr<B>>,
+struct MultipleRecipient {
+    upper_group: GroupID,
+    lower_groups: Vec<GroupID>,
+
+    recipient_event: Recipient<EventMessage>,
+    recipient_peer_join: Recipient<PeerJoinMessage>,
+    recipient_peer_join_result: Recipient<PeerJoinResultMessage>,
+    recipient_peer_leave: Recipient<PeerLeaveMessage>,
+
+    recipient_local: Recipient<LocalMessage>,
+    recipient_upper: Recipient<UpperMessage>,
+    recipient_lower: Recipient<LowerMessage>,
+
+    recipient_local_response: Recipient<LocalResponseMessage>,
+    recipient_upper_response: Recipient<UpperResponseMessage>,
+    recipient_lower_response: Recipient<LowerResponseMessage>,
+    recipient_level_permission: Recipient<LevelPermissionMessage>,
+    recipient_level_permission_response: Recipient<LevelPermissionResponseMessage>,
 }
 
-impl<B: BridgeActor> NetworkBridgeActor<B> {
+#[derive(Clone)]
+pub struct NetworkBridgeActor {
+    p2p_addr: Addr<P2PActor<Self>>,
+    rpc_addr: Addr<RPCActor<Self>>,
+    bridges: HashMap<GroupID, MultipleRecipient>,
+}
+
+impl NetworkBridgeActor {
     pub fn load(p2p_addr: Addr<P2PActor<Self>>, rpc_addr: Addr<RPCActor<Self>>) -> Self {
         let bridges = HashMap::new();
 
@@ -26,21 +47,6 @@ impl<B: BridgeActor> NetworkBridgeActor<B> {
             p2p_addr,
             rpc_addr,
             bridges,
-        }
-    }
-
-    /// try send received event to bridge actor
-    fn send_bridge<M: 'static>(&self, group_id: GroupID, message: M)
-    where
-        B: Handler<M>,
-        M: Message + Send + Clone,
-        <M as Message>::Result: Send,
-        <B as Actor>::Context: ToEnvelope<B, M>,
-    {
-        if self.bridges.contains_key(&group_id) {
-            let addr = self.bridges.get(&group_id).unwrap().clone();
-            let _ = try_resend_times(addr, message, DEFAULT_TIMES)
-                .map_err(|_| println!("Send Message to udp fail"));
         }
     }
 
@@ -70,7 +76,7 @@ impl<B: BridgeActor> NetworkBridgeActor<B> {
 }
 
 /// impl Actor for NetworkBridgeActor
-impl<B: BridgeActor> Actor for NetworkBridgeActor<B> {
+impl Actor for NetworkBridgeActor {
     type Context = Context<Self>;
 
     /// when start register to p2p and rpc actor
@@ -81,18 +87,45 @@ impl<B: BridgeActor> Actor for NetworkBridgeActor<B> {
 }
 
 /// impl BridgeActor for NetworkBridgeActor
-impl<B: BridgeActor> BridgeActor for NetworkBridgeActor<B> {}
+impl BridgeActor for NetworkBridgeActor {}
 
-impl<B: BridgeActor> Handler<BridgeAddrMessage<B>> for NetworkBridgeActor<B> {
-    type Result = ();
+/// receive local rpc request from bridge actor, and send to rpc
+impl<B: BridgeActor> Handler<RegisterBridgeMessage<B>> for NetworkBridgeActor {
+    type Result = bool;
 
-    fn handle(&mut self, msg: BridgeAddrMessage<B>, _ctx: &mut Self::Context) -> Self::Result {
-        self.bridges.insert(msg.0, msg.1);
+    fn handle(&mut self, msg: RegisterBridgeMessage<B>, _ctx: &mut Self::Context) -> Self::Result {
+        let (group_id, upper_group, addr) = (msg.0, msg.1, msg.2);
+        let group = MultipleRecipient {
+            upper_group: upper_group,
+            lower_groups: Vec::new(),
+
+            recipient_event: addr.clone().recipient::<EventMessage>(),
+            recipient_peer_join: addr.clone().recipient::<PeerJoinMessage>(),
+            recipient_peer_join_result: addr.clone().recipient::<PeerJoinResultMessage>(),
+            recipient_peer_leave: addr.clone().recipient::<PeerLeaveMessage>(),
+
+            recipient_local: addr.clone().recipient::<LocalMessage>(),
+            recipient_upper: addr.clone().recipient::<UpperMessage>(),
+            recipient_lower: addr.clone().recipient::<LowerMessage>(),
+
+            recipient_local_response: addr.clone().recipient::<LocalResponseMessage>(),
+            recipient_upper_response: addr.clone().recipient::<UpperResponseMessage>(),
+            recipient_lower_response: addr.clone().recipient::<LowerResponseMessage>(),
+            recipient_level_permission: addr.clone().recipient::<LevelPermissionMessage>(),
+            recipient_level_permission_response: addr.recipient::<LevelPermissionResponseMessage>(),
+        };
+
+        if self.bridges.contains_key(&group_id) {
+            false
+        } else {
+            self.bridges.insert(group_id, group);
+            true
+        }
     }
 }
 
 /// receive local rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<LocalMessage> for NetworkBridgeActor<B> {
+impl Handler<LocalMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: LocalMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -101,7 +134,7 @@ impl<B: BridgeActor> Handler<LocalMessage> for NetworkBridgeActor<B> {
 }
 
 /// receive send to upper rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<UpperMessage> for NetworkBridgeActor<B> {
+impl Handler<UpperMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: UpperMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -110,7 +143,7 @@ impl<B: BridgeActor> Handler<UpperMessage> for NetworkBridgeActor<B> {
 }
 
 /// receive send to lower rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<LowerMessage> for NetworkBridgeActor<B> {
+impl Handler<LowerMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: LowerMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -119,7 +152,7 @@ impl<B: BridgeActor> Handler<LowerMessage> for NetworkBridgeActor<B> {
 }
 
 /// receive send to lower rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<LevelPermissionMessage> for NetworkBridgeActor<B> {
+impl Handler<LevelPermissionMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: LevelPermissionMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -127,7 +160,7 @@ impl<B: BridgeActor> Handler<LevelPermissionMessage> for NetworkBridgeActor<B> {
     }
 }
 
-impl<B: BridgeActor> Handler<LocalResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<LocalResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: LocalResponseMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -135,7 +168,7 @@ impl<B: BridgeActor> Handler<LocalResponseMessage> for NetworkBridgeActor<B> {
     }
 }
 
-impl<B: BridgeActor> Handler<UpperResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<UpperResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: UpperResponseMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -143,7 +176,7 @@ impl<B: BridgeActor> Handler<UpperResponseMessage> for NetworkBridgeActor<B> {
     }
 }
 
-impl<B: BridgeActor> Handler<LowerResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<LowerResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: LowerResponseMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -151,7 +184,7 @@ impl<B: BridgeActor> Handler<LowerResponseMessage> for NetworkBridgeActor<B> {
     }
 }
 
-impl<B: BridgeActor> Handler<LevelPermissionResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<LevelPermissionResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -164,7 +197,7 @@ impl<B: BridgeActor> Handler<LevelPermissionResponseMessage> for NetworkBridgeAc
 }
 
 /// receive event message from bridge actor, and send to p2p
-impl<B: BridgeActor> Handler<EventMessage> for NetworkBridgeActor<B> {
+impl Handler<EventMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: EventMessage, _ctx: &mut Self::Context) {
@@ -173,7 +206,7 @@ impl<B: BridgeActor> Handler<EventMessage> for NetworkBridgeActor<B> {
 }
 
 /// receive peer join message from bridge actor, and send to p2p
-impl<B: BridgeActor> Handler<PeerJoinMessage> for NetworkBridgeActor<B> {
+impl Handler<PeerJoinMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: PeerJoinMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -182,7 +215,7 @@ impl<B: BridgeActor> Handler<PeerJoinMessage> for NetworkBridgeActor<B> {
 }
 
 /// receive peer join result from bridge actor, and send to p2p
-impl<B: BridgeActor> Handler<PeerJoinResultMessage> for NetworkBridgeActor<B> {
+impl Handler<PeerJoinResultMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: PeerJoinResultMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -191,7 +224,7 @@ impl<B: BridgeActor> Handler<PeerJoinResultMessage> for NetworkBridgeActor<B> {
 }
 
 /// receive peer leave message from bridge actor, and send to p2p
-impl<B: BridgeActor> Handler<PeerLeaveMessage> for NetworkBridgeActor<B> {
+impl Handler<PeerLeaveMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: PeerLeaveMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -200,28 +233,40 @@ impl<B: BridgeActor> Handler<PeerLeaveMessage> for NetworkBridgeActor<B> {
 }
 
 /// impl RPCBridgeActor for NetworkBridgeActor {}
-impl<B: BridgeActor> P2PBridgeActor for NetworkBridgeActor<B> {}
+impl P2PBridgeActor for NetworkBridgeActor {}
 
 /// receive event message from p2p actor, and send to bridge
-impl<B: BridgeActor> Handler<ReceiveEventMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveEventMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveEventMessage, _ctx: &mut Self::Context) -> Self::Result {
-        self.send_bridge(msg.0.clone(), EventMessage(msg.0, msg.1, msg.2));
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_event
+                    .do_send(EventMessage(msg.0, msg.1, msg.2)),
+            )
+        });
     }
 }
 
 /// receive peer join message from p2p actor, and send to bridge
-impl<B: BridgeActor> Handler<ReceivePeerJoinMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceivePeerJoinMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceivePeerJoinMessage, _ctx: &mut Self::Context) -> Self::Result {
-        self.send_bridge(msg.0.clone(), PeerJoinMessage(msg.0, msg.1, msg.2, msg.3));
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_peer_join
+                    .do_send(PeerJoinMessage(msg.0, msg.1, msg.2, msg.3)),
+            )
+        });
     }
 }
 
 /// receive peer join result from bridge actor, and send to p2p
-impl<B: BridgeActor> Handler<ReceivePeerJoinResultMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceivePeerJoinResultMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -229,77 +274,89 @@ impl<B: BridgeActor> Handler<ReceivePeerJoinResultMessage> for NetworkBridgeActo
         msg: ReceivePeerJoinResultMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.send_bridge(
-            msg.0.clone(),
-            PeerJoinResultMessage(msg.0, msg.1, msg.2, msg.3),
-        );
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_peer_join_result
+                    .do_send(PeerJoinResultMessage(msg.0, msg.1, msg.2, msg.3)),
+            )
+        });
     }
 }
 
 /// receive peer leave message from p2p actor, and send to bridge
-impl<B: BridgeActor> Handler<ReceivePeerLeaveMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceivePeerLeaveMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceivePeerLeaveMessage, _ctx: &mut Self::Context) -> Self::Result {
-        self.send_bridge(msg.0.clone(), PeerLeaveMessage(msg.0, msg.1, msg.2));
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_peer_leave
+                    .do_send(PeerLeaveMessage(msg.0, msg.1, msg.2)),
+            )
+        });
     }
 }
 
 /// impl RPCBridgeActor for NetworkBridgeActor
-impl<B: BridgeActor> RPCBridgeActor for NetworkBridgeActor<B> {}
+impl RPCBridgeActor for NetworkBridgeActor {}
 
 /// receive local rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<ReceiveLocalMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveLocalMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveLocalMessage, _ctx: &mut Self::Context) -> Self::Result {
-        if !self.bridges.contains_key(&msg.0) {
-            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
-                msg.0.clone(),
-                msg.1,
-                false,
-            ));
+        if self.bridges.contains_key(&msg.0) {
+            let _ = self
+                .bridges
+                .get(&msg.0)
+                .unwrap()
+                .recipient_local
+                .do_send(LocalMessage(msg.0, msg.1, msg.2, msg.3));
+        } else {
+            self.send_rpc(ReceiveLevelPermissionResponseMessage(msg.0, msg.1, false));
         }
-
-        self.send_bridge(msg.0.clone(), LocalMessage(msg.0, msg.1, msg.2, msg.3));
     }
 }
 
 /// receive send to upper rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<ReceiveUpperMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveUpperMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveUpperMessage, _ctx: &mut Self::Context) -> Self::Result {
-        if !self.bridges.contains_key(&msg.0) {
-            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
-                msg.0.clone(),
-                msg.1,
-                false,
-            ));
+        if self.bridges.contains_key(&msg.0) {
+            let _ = self
+                .bridges
+                .get(&msg.0)
+                .unwrap()
+                .recipient_upper
+                .do_send(UpperMessage(msg.0, msg.1, msg.2));
+        } else {
+            self.send_rpc(ReceiveLevelPermissionResponseMessage(msg.0, msg.1, false));
         }
-
-        self.send_bridge(msg.0.clone(), UpperMessage(msg.0, msg.1, msg.2));
     }
 }
 
 /// receive send to lower rpc request from bridge actor, and send to rpc
-impl<B: BridgeActor> Handler<ReceiveLowerMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveLowerMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(&mut self, msg: ReceiveLowerMessage, _ctx: &mut Self::Context) -> Self::Result {
-        if !self.bridges.contains_key(&msg.0) {
-            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
-                msg.0.clone(),
-                msg.1,
-                false,
-            ));
+        if self.bridges.contains_key(&msg.0) {
+            let _ = self
+                .bridges
+                .get(&msg.0)
+                .unwrap()
+                .recipient_lower
+                .do_send(LowerMessage(msg.0, msg.1, msg.2));
+        } else {
+            self.send_rpc(ReceiveLevelPermissionResponseMessage(msg.0, msg.1, false));
         }
-
-        self.send_bridge(msg.0.clone(), LowerMessage(msg.0, msg.1, msg.2));
     }
 }
 
-impl<B: BridgeActor> Handler<ReceiveLevelPermissionMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveLevelPermissionMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -307,22 +364,20 @@ impl<B: BridgeActor> Handler<ReceiveLevelPermissionMessage> for NetworkBridgeAct
         msg: ReceiveLevelPermissionMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        if !self.bridges.contains_key(&msg.0) {
-            return self.send_rpc(ReceiveLevelPermissionResponseMessage(
-                msg.0.clone(),
-                msg.1,
-                false,
-            ));
+        if self.bridges.contains_key(&msg.0) {
+            let _ = self
+                .bridges
+                .get(&msg.0)
+                .unwrap()
+                .recipient_level_permission
+                .do_send(LevelPermissionMessage(msg.0, msg.1, msg.2, msg.3));
+        } else {
+            self.send_rpc(ReceiveLevelPermissionResponseMessage(msg.0, msg.1, false));
         }
-
-        self.send_bridge(
-            msg.0.clone(),
-            LevelPermissionMessage(msg.0, msg.1, msg.2, msg.3),
-        );
     }
 }
 
-impl<B: BridgeActor> Handler<ReceiveLocalResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveLocalResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -330,11 +385,17 @@ impl<B: BridgeActor> Handler<ReceiveLocalResponseMessage> for NetworkBridgeActor
         msg: ReceiveLocalResponseMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.send_bridge(msg.0.clone(), LocalResponseMessage(msg.0, msg.1, msg.2));
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_local_response
+                    .do_send(LocalResponseMessage(msg.0, msg.1, msg.2)),
+            )
+        });
     }
 }
 
-impl<B: BridgeActor> Handler<ReceiveUpperResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveUpperResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -342,11 +403,17 @@ impl<B: BridgeActor> Handler<ReceiveUpperResponseMessage> for NetworkBridgeActor
         msg: ReceiveUpperResponseMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.send_bridge(msg.0.clone(), UpperResponseMessage(msg.0, msg.1, msg.2));
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_upper_response
+                    .do_send(UpperResponseMessage(msg.0, msg.1, msg.2)),
+            )
+        });
     }
 }
 
-impl<B: BridgeActor> Handler<ReceiveLowerResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveLowerResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -354,11 +421,17 @@ impl<B: BridgeActor> Handler<ReceiveLowerResponseMessage> for NetworkBridgeActor
         msg: ReceiveLowerResponseMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.send_bridge(msg.0.clone(), LowerResponseMessage(msg.0, msg.1, msg.2));
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_lower_response
+                    .do_send(LowerResponseMessage(msg.0, msg.1, msg.2)),
+            )
+        });
     }
 }
 
-impl<B: BridgeActor> Handler<ReceiveLevelPermissionResponseMessage> for NetworkBridgeActor<B> {
+impl Handler<ReceiveLevelPermissionResponseMessage> for NetworkBridgeActor {
     type Result = ();
 
     fn handle(
@@ -366,9 +439,12 @@ impl<B: BridgeActor> Handler<ReceiveLevelPermissionResponseMessage> for NetworkB
         msg: ReceiveLevelPermissionResponseMessage,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.send_bridge(
-            msg.0.clone(),
-            LevelPermissionResponseMessage(msg.0, msg.1, msg.2),
-        );
+        self.bridges.get(&msg.0).and_then(|group| {
+            Some(
+                group
+                    .recipient_level_permission_response
+                    .do_send(LevelPermissionResponseMessage(msg.0, msg.1, msg.2)),
+            )
+        });
     }
 }

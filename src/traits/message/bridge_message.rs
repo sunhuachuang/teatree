@@ -126,10 +126,9 @@ impl Message for LevelPermissionResponseMessage {
     type Result = ();
 }
 
-/// when bridge start, need register addr to network bridge actor
 #[derive(Clone)]
-pub struct BridgeAddrMessage<B: BridgeActor>(pub GroupID, pub Addr<B>);
+pub struct RegisterBridgeMessage<B: BridgeActor>(pub GroupID, pub GroupID, pub Addr<B>);
 
-impl<B: BridgeActor> Message for BridgeAddrMessage<B> {
-    type Result = ();
+impl<B: BridgeActor> Message for RegisterBridgeMessage<B> {
+    type Result = bool;
 }
