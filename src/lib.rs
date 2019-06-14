@@ -3,6 +3,7 @@
 use std::net::SocketAddr;
 
 mod config;
+mod multiple_bridge;
 mod network_bridge;
 
 pub mod actor;
@@ -20,6 +21,7 @@ use rpc::rpc_start;
 use traits::actor::BridgeActor;
 
 pub use config::Configure;
+pub use multiple_bridge::MultipleNetworkBridgeActor;
 pub use network_bridge::NetworkBridgeActor;
 
 pub fn system_init() -> SystemRunner {
