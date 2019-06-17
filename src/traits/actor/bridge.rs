@@ -3,8 +3,7 @@ use crate::traits::message::bridge_message::*;
 
 pub trait BridgeActor<R = Context<Self>>
 where
-    Self: Clone
-        + Actor<Context = R>
+    Self: Actor<Context = R>
         + Handler<EventMessage>
         + Handler<PeerJoinMessage>
         + Handler<PeerJoinResultMessage>

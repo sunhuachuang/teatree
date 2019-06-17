@@ -86,7 +86,15 @@ impl PrivateKey {
         })
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> [u8; PRIVATE_KEY_LENGTH] {
+        self.private_key.to_bytes()
+    }
+
+    pub fn as_bytes(&self) -> &[u8; PRIVATE_KEY_LENGTH] {
+        self.private_key.as_bytes()
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
         self.private_key.as_bytes().to_vec()
     }
 
@@ -108,7 +116,15 @@ impl PublicKey {
             .is_ok()
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_LENGTH] {
+        self.public_key.to_bytes()
+    }
+
+    pub fn as_bytes(&self) -> &[u8; PUBLIC_KEY_LENGTH] {
+        self.public_key.as_bytes()
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
         self.public_key.as_bytes().to_vec()
     }
 
@@ -133,10 +149,6 @@ impl PublicKey {
 }
 
 impl Signature {
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.signature.to_bytes().to_vec()
-    }
-
     pub fn from_bytes(signature_bytes: &[u8]) -> Option<Signature> {
         if signature_bytes.len() != SIGNATURE_LENGTH {
             return None;
@@ -154,6 +166,14 @@ impl Signature {
 
     pub fn len(&self) -> usize {
         SIGNATURE_LENGTH
+    }
+
+    pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
+        self.signature.to_bytes()
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.signature.to_bytes().to_vec()
     }
 }
 
